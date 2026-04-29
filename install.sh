@@ -14,6 +14,7 @@ set -euo pipefail
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 APL_VERSION="0.1.0"
+GITHUB_REPO="KenanMathews/apl"
 AGENT_USER="apl-agent"
 AGENT_HOME="/home/apl-agent"
 BINARY_PATH="/usr/local/bin/apl"
@@ -100,18 +101,33 @@ check_desktop() {
 }
 
 check_binary() {
-    local binary="${SCRIPT_DIR}/target/release/apl"
+    # 1. Already built locally (dev workflow)
+    local local_bin="${SCRIPT_DIR}/target/release/apl"
+    [[ -f "$local_bin" ]] && { echo "$local_bin"; return; }
+    local_bin="./apl"
+    [[ -f "$local_bin" ]] && { echo "$local_bin"; return; }
 
-    if [[ ! -f "$binary" ]]; then
-        # Try current directory
-        binary="./apl"
+    # 2. Download from GitHub Releases
+    local arch
+    arch="$(uname -m)"
+    case "$arch" in
+        x86_64)  arch_suffix="x86_64-linux" ;;
+        aarch64) arch_suffix="aarch64-linux" ;;
+        *) die "Unsupported architecture: $arch" ;;
+    esac
+
+    local url="https://github.com/${GITHUB_REPO}/releases/download/v${APL_VERSION}/apl-${arch_suffix}"
+    local tmp
+    tmp="$(mktemp)"
+
+    info "Downloading APL v${APL_VERSION} binary for ${arch}..."
+    if curl -fsSL --retry 3 --retry-delay 2 -o "$tmp" "$url"; then
+        chmod +x "$tmp"
+        echo "$tmp"
+    else
+        rm -f "$tmp"
+        die "Download failed from: $url\nBuild locally with: cargo build --release"
     fi
-
-    if [[ ! -f "$binary" ]]; then
-        die "APL binary not found. Build it first with: cargo build --release"
-    fi
-
-    echo "$binary"
 }
 
 # ── Dependency installation ───────────────────────────────────────────────────
@@ -186,6 +202,7 @@ install_binary() {
     src="$(check_binary)"
 
     install -m 755 "$src" "$BINARY_PATH"
+    [[ "$src" == /tmp/* ]] && rm -f "$src"
     ok "Binary installed: $BINARY_PATH"
 
     # Verify it runs

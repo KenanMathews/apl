@@ -1,0 +1,17 @@
+[package]
+name = "apl"
+version = "0.1.0"
+edition = "2021"
+description = "Agent Pseudocode Language interpreter"
+
+[[bin]]
+name = "apl"
+path = "src/main.rs"
+
+[dependencies]
+thiserror = "=1.0.50"
+serde = { version = "=1.0.193", features = ["derive"] }
+serde_json = "=1.0.108"
+anyhow = "=1.0.75"
+
+[dev-dependencies]

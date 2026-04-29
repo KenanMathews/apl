@@ -120,7 +120,7 @@ check_binary() {
     local tmp
     tmp="$(mktemp)"
 
-    info "Downloading APL v${APL_VERSION} binary for ${arch}..."
+    info "Downloading APL v${APL_VERSION} binary for ${arch}..." >&2
     if curl -fsSL --retry 3 --retry-delay 2 -o "$tmp" "$url"; then
         chmod +x "$tmp"
         echo "$tmp"
